@@ -30,6 +30,8 @@ if (${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm" OR ${CMAKE_SYSTEM_PROCESSOR} MATCHES
 elseif (${CMAKE_SYSTEM_PROCESSOR} MATCHES "ppc64le" OR ${CMAKE_SYSTEM_PROCESSOR} MATCHES "ppc64")
     message(STATUS "PPC64 detected")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mpower9-vector")
+elseif (${CMAKE_SYSTEM_PROCESSOR} MATCHES "riscv64")
+    message(STATUS "riscv64 detected")
 else()
     message(STATUS "x86 detected")
     #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mavx -mavx2 -mfma -mf16c")
