@@ -435,6 +435,7 @@ bool ggml_guid_matches(ggml_guid_t guid_a, ggml_guid_t guid_b) {
 #if defined(_MSC_VER) || defined(__MINGW32__)
 static int64_t timer_freq, timer_start;
 void ggml_time_init(void) {
+    printf("%s: start\n", __func__);
     LARGE_INTEGER t;
     QueryPerformanceFrequency(&t);
     timer_freq = t.QuadPart;
@@ -444,6 +445,7 @@ void ggml_time_init(void) {
     // We subtract the program start time to reduce the likelihood of that happening.
     QueryPerformanceCounter(&t);
     timer_start = t.QuadPart;
+     printf("%s: end\n", __func__);
 }
 int64_t ggml_time_ms(void) {
     LARGE_INTEGER t;
@@ -2458,6 +2460,7 @@ inline static void ggml_critical_section_start(void) {
         atomic_fetch_sub(&g_state_barrier, 1);
         sched_yield(); // TODO: reconsider this
         processing = atomic_fetch_add(&g_state_barrier, 1);
+        printf("%s: processing  = %d \n", __func__, processing);
     }
 }
 
@@ -2886,6 +2889,7 @@ struct ggml_context * ggml_init(struct ggml_init_params params) {
             const uint64_t t_start = ggml_time_us(); UNUSED(t_start);
 
             for (int i = 0; i < (1 << 16); ++i) {
+                printf("%s: i = %d start\n", __func__,i);
                 union {
                     uint16_t u16;
                     ggml_fp16_t fp16;
@@ -2895,6 +2899,7 @@ struct ggml_context * ggml_init(struct ggml_init_params params) {
                 ggml_table_gelu_quick_f16[i] = GGML_FP32_TO_FP16(ggml_gelu_quick_f32(f));
                 ggml_table_silu_f16[i] = GGML_FP32_TO_FP16(ggml_silu_f32(f));
                 ggml_table_exp_f16[i] = GGML_FP32_TO_FP16(expf(f));
+                printf("%s: i = %d end\n", __func__,i);
             }
 
             const uint64_t t_end = ggml_time_us(); UNUSED(t_end);
@@ -2915,12 +2920,15 @@ struct ggml_context * ggml_init(struct ggml_init_params params) {
             };
 
             for (int i = 0; i < GGML_MAX_CONTEXTS; ++i) {
+                printf("%s: i = %d start\n", __func__,i);
                 g_state.contexts[i].used = false;
+                printf("%s: i = %d end\n", __func__,i);
             }
-
+            printf("GGML_MAX_CONTEXTS end\n");
             const uint64_t t_end = ggml_time_us(); UNUSED(t_end);
 
             GGML_PRINT_DEBUG("%s: g_state initialized in %f ms\n", __func__, (t_end - t_start)/1000.0f);
+            printf("%s: g_state initialized in %f ms\n", __func__, (t_end - t_start)/1000.0f);
         }
 
 #if defined(GGML_USE_CLBLAST)
