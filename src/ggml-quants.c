@@ -4964,6 +4964,41 @@ void ggml_vec_dot_q8_0_q8_0(int n, float * restrict s, size_t bs, const void * r
     }
 
     *s = sumf;
+
+#elif defined(__riscv_xs_vdot)
+
+    static int isPrinted = 0;
+    if (!isPrinted) {
+        printf("use xiangshan vdot\n");
+        isPrinted = 1;
+    }
+
+    float sumf = 0.0;
+    int64_t sum = 0;
+    // each block have 32 int8
+    for (int i = 0; i < nb; i++) {
+        int64_t x0, x1, x2, x3;
+        memcpy(&x0, &(x->qs[0]), 8);
+        memcpy(&x1, &(x->qs[8]), 8);
+        memcpy(&x2, &(x->qs[16]), 8);
+        memcpy(&x3, &(x->qs[24]), 8);
+
+        int64_t y0, y1, y2, y3;
+        memcpy(&y0, &(y->qs[0]), 8);
+        memcpy(&y1, &(y->qs[8]), 8);
+        memcpy(&y2, &(y->qs[16]), 8);
+        memcpy(&y3, &(y->qs[24]), 8);
+
+        int64_t res0, res1, res2, res3;
+        res0 = xs_vdot(x0, y0);
+        res1 = xs_vdot(x1, y1);
+        res2 = xs_vdot(x2, y2);
+        res3 = xs_vdot(x3, y3);
+        sum += res0 + res1 + res2 + res3;
+    }
+    sumf = (float)sum;
+    *s = sumf;
+
 #elif defined(__POWER9_VECTOR__)
     vector float vsumf0 = vec_splats(0.0f);
 
