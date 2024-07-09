@@ -4991,6 +4991,45 @@ void ggml_vec_dot_q8_0_q8_0(int n, float * restrict s, size_t bs, const void * r
     }
     *s = sumf;
 
+#elif defined(__riscv_xs_mmul)
+    float sumf = 0.0;
+    for (int i = 0; i < nb; i++) {
+        int64_t x0, x1, x2, x3;
+        volatile int64_t res0_buf, res1_buf, res2_buf, res3_buf;
+
+        memcpy(&x0, &(x[i].qs[0]), 8);
+        memcpy(&x1, &(x[i].qs[8]), 8);
+        memcpy(&x2, &(x[i].qs[16]), 8);
+        memcpy(&x3, &(x[i].qs[24]), 8);
+
+        int64_t y0, y1, y2, y3;
+        memcpy(&y0, &(y[i].qs[0]), 8);
+        memcpy(&y1, &(y[i].qs[8]), 8);
+        memcpy(&y2, &(y[i].qs[16]), 8);
+        memcpy(&y3, &(y[i].qs[24]), 8);
+
+        mload(&x0, &x1, 1);
+        mload(&x2, &x3, 2);
+
+        mload(&y0, &y1, 3);
+        mload(&y2, &y3, 4);
+
+        mmul(1, 3, 5);
+        mmul(2, 4, 6);
+
+        mstore(&res0_buf, &res1_buf, 5);
+	    mstore(&res2_buf, &res3_buf, 6);
+
+        int64_t res0 = res0_buf >> 32;
+        int64_t res1 = (int) res1_buf;
+        int64_t res2 = res2_buf >> 32;
+        int64_t res3 = (int) res3_buf;
+
+        int sumi = res0 + res1 + res2 + res3;
+        sumf += sumi*(GGML_FP16_TO_FP32(x[i].d)*GGML_FP16_TO_FP32(y[i].d));
+    }
+    *s = sumf;
+
 #elif defined(__POWER9_VECTOR__)
     vector float vsumf0 = vec_splats(0.0f);
 
